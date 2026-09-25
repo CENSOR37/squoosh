@@ -4,6 +4,8 @@
   "version": "2.0.0",
   "license": "apache-2.0",
   "scripts": {
+    "test": "node --test tests/*.test.cjs",
+    "preview": "serve -s build -l 5000 -c ../serve.json",
     "build": "rollup -c && node lib/move-output.js",
     "debug": "node --inspect-brk node_modules/.bin/rollup -c",
     "dev": "DEV_PORT=\"${DEV_PORT:=5000}\" run-p watch serve",

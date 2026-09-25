@@ -4,6 +4,7 @@ import type { FileDropElement, FileDropEvent } from 'file-drop-element';
 
 interface FileDropAttributes extends preact.JSX.HTMLAttributes {
   accept?: string;
+  multiple?: boolean;
   onfiledrop?: ((this: FileDropElement, ev: FileDropEvent) => any) | null;
 }
 

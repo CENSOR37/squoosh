@@ -18,7 +18,6 @@ import { allSrc } from 'client-bundle:client/initial-app';
 import favicon from 'url:static-build/assets/favicon.ico';
 import ogImage from 'url:static-build/assets/icon-large-maskable.png';
 import { escapeStyleScriptContent, siteOrigin } from 'static-build/utils';
-import Intro from 'shared/prerendered-app/Intro';
 import snackbarCss from 'css:../../../shared/custom-els/snack-bar/styles.css';
 import * as snackbarStyle from '../../../shared/custom-els/snack-bar/styles.css';
 
@@ -74,7 +73,12 @@ const Index: FunctionalComponent<Props> = () => (
     </head>
     <body>
       <div id="app">
-        <Intro />
+        <div
+          style="height:100%;display:grid;place-content:center;background:#0c0e12;color:#e8ecf4;font:16px system-ui"
+          role="status"
+        >
+          Loading Squoosh…
+        </div>
         <noscript>
           <style
             dangerouslySetInnerHTML={{

@@ -16,6 +16,7 @@ function subtractSets<T extends any>(set1: Set<T>, set2: Set<T>): Set<T> {
 import * as initialApp from 'entry-data:client/initial-app';
 import swUrl from 'service-worker:sw';
 import * as compress from 'entry-data:client/lazy-app/Compress';
+import * as batch from 'entry-data:client/lazy-app/Batch';
 import * as swBridge from 'entry-data:client/lazy-app/sw-bridge';
 import * as blobAnim from 'entry-data:shared/prerendered-app/Intro/blob-anim';
 
@@ -54,6 +55,8 @@ export function shouldCacheDynamically(url: string) {
 }
 
 let initialJs = new Set([
+  batch.main,
+  ...batch.deps.filter((item) => !shouldCacheDynamically(item)),
   compress.main,
   ...compress.deps,
   swBridge.main,

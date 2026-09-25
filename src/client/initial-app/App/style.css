@@ -66,3 +66,27 @@
   --size: 225px;
   --stroke-width: 26px;
 }
+
+.batch-host,
+.classic-host {
+  height: 100%;
+}
+
+.scrollable {
+  touch-action: pan-y;
+}
+.batch-host[hidden] {
+  display: none;
+}
+.return-to-batch {
+  position: absolute;
+  top: 12px;
+  left: 12px;
+  z-index: 10;
+  background: #192333;
+  border: 1px solid #45536c;
+  color: #fff;
+  padding: 10px 14px;
+  border-radius: 6px;
+  cursor: pointer;
+}

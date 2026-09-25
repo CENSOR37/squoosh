@@ -59,6 +59,13 @@ self.addEventListener('fetch', (event) => {
     return;
   }
 
+  if (url.pathname === '/classic' && event.request.method === 'GET') {
+    event.respondWith(
+      caches.match('/').then((cached) => cached || fetch(event.request)),
+    );
+    return;
+  }
+
   if (
     url.pathname === '/' &&
     url.searchParams.has('share-target') &&

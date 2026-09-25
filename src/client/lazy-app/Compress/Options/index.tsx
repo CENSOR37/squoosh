@@ -20,6 +20,7 @@ import { Options as ResizeOptionsComponent } from 'features/processors/resize/cl
 import { ImportIcon, SaveIcon, SwapIcon } from 'client/lazy-app/icons';
 
 interface Props {
+  bulk?: boolean;
   index: 0 | 1;
   mobileView: boolean;
   source?: SourceImage;
@@ -95,7 +96,7 @@ export default class Options extends Component<Props, State> {
 
   componentWillUnmount(): void {
     window.removeEventListener('leftSideSettings', this.setLeftSideSettings);
-    window.removeEventListener('removeSideSettings', this.setRightSideSettings);
+    window.removeEventListener('rightSideSettings', this.setRightSideSettings);
   }
 
   private onEncoderTypeChange = (event: Event) => {
@@ -168,44 +169,51 @@ export default class Options extends Component<Props, State> {
             <div>
               <h3 class={style.optionsTitle}>
                 <div class={style.titleAndButtons}>
-                  Edit
-                  <button
-                    class={style.copyOverButton}
-                    title="Copy settings to other side"
-                    onClick={this.onCopyToOtherSideClick}
-                  >
-                    <SwapIcon />
-                  </button>
-                  <button
-                    class={style.saveButton}
-                    title="Save side settings"
-                    onClick={this.onSaveSideSettingClick}
-                  >
-                    <SaveIcon />
-                  </button>
-                  <button
-                    class={
-                      style.importButton +
-                      ' ' +
-                      (!this.state.leftSideSettings && this.props.index === 0
-                        ? style.buttonOpacity
-                        : '') +
-                      ' ' +
-                      (!this.state.rightSideSettings && this.props.index === 1
-                        ? style.buttonOpacity
-                        : '')
-                    }
-                    title="Import saved side settings"
-                    onClick={this.onImportSideSettingsClick}
-                    disabled={
-                      // Disabled if this side's settings haven't been saved
-                      (!this.state.leftSideSettings &&
-                        this.props.index === 0) ||
-                      (!this.state.rightSideSettings && this.props.index === 1)
-                    }
-                  >
-                    <ImportIcon />
-                  </button>
+                  {this.props.bulk ? 'Image processing' : 'Edit'}
+                  {!this.props.bulk && (
+                    <span class={style.sideActions}>
+                      <button
+                        class={style.copyOverButton}
+                        title="Copy settings to other side"
+                        onClick={this.onCopyToOtherSideClick}
+                      >
+                        <SwapIcon />
+                      </button>
+                      <button
+                        class={style.saveButton}
+                        title="Save side settings"
+                        onClick={this.onSaveSideSettingClick}
+                      >
+                        <SaveIcon />
+                      </button>
+                      <button
+                        class={
+                          style.importButton +
+                          ' ' +
+                          (!this.state.leftSideSettings &&
+                          this.props.index === 0
+                            ? style.buttonOpacity
+                            : '') +
+                          ' ' +
+                          (!this.state.rightSideSettings &&
+                          this.props.index === 1
+                            ? style.buttonOpacity
+                            : '')
+                        }
+                        title="Import saved side settings"
+                        onClick={this.onImportSideSettingsClick}
+                        disabled={
+                          // Disabled if this side's settings haven't been saved
+                          (!this.state.leftSideSettings &&
+                            this.props.index === 0) ||
+                          (!this.state.rightSideSettings &&
+                            this.props.index === 1)
+                        }
+                      >
+                        <ImportIcon />
+                      </button>
+                    </span>
+                  )}
                 </div>
               </h3>
               <label class={style.sectionEnabler}>
@@ -248,11 +256,14 @@ export default class Options extends Component<Props, State> {
           )}
         </Expander>
 
-        <h3 class={style.optionsTitle}>Compress</h3>
+        <h3 class={style.optionsTitle}>
+          {this.props.bulk ? 'Output format' : 'Compress'}
+        </h3>
 
         <section class={`${style.optionOneCell} ${style.optionsSection}`}>
           {supportedEncoderMap ? (
             <Select
+              aria-label="Output format"
               value={encoderState ? encoderState.type : 'identity'}
               onChange={this.onEncoderTypeChange}
               large

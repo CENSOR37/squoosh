@@ -15,11 +15,8 @@ import 'shared/custom-els/loading-spinner';
 const ROUTE_EDITOR = '/editor';
 
 const compressPromise = import('client/lazy-app/Compress');
+const batchPromise = import('client/lazy-app/Batch');
 const swBridgePromise = import('client/lazy-app/sw-bridge');
-
-function back() {
-  window.history.back();
-}
 
 interface Props {}
 
@@ -28,6 +25,9 @@ interface State {
   file?: File;
   isEditorOpen: Boolean;
   Compress?: typeof import('client/lazy-app/Compress').default;
+  Batch?: typeof import('client/lazy-app/Batch').default;
+  incoming: File[];
+  classic: boolean;
 }
 
 export default class App extends Component<Props, State> {
@@ -38,12 +38,20 @@ export default class App extends Component<Props, State> {
     isEditorOpen: false,
     file: undefined,
     Compress: undefined,
+    incoming: [],
+    classic: location.pathname === '/classic',
   };
 
   snackbar?: SnackBarElement;
 
   constructor() {
     super();
+
+    batchPromise
+      .then((module) => this.setState({ Batch: module.default }))
+      .catch(() =>
+        this.showSnack('Failed to load batch workspace. Please reload.'),
+      );
 
     compressPromise
       .then((module) => {
@@ -76,9 +84,12 @@ export default class App extends Component<Props, State> {
 
   private onFileDrop = ({ files }: FileDropEvent) => {
     if (!files || files.length === 0) return;
-    const file = files[0];
-    this.openEditor();
-    this.setState({ file });
+    if (files.length === 1 && (this.state.isEditorOpen || this.state.classic)) {
+      this.onIntroPickFile(files[0]);
+    } else {
+      this.openBatch();
+      this.setState({ incoming: Array.from(files) });
+    }
   };
 
   private onIntroPickFile = (file: File) => {
@@ -95,7 +106,20 @@ export default class App extends Component<Props, State> {
   };
 
   private onPopState = () => {
-    this.setState({ isEditorOpen: location.pathname === ROUTE_EDITOR });
+    this.setState({
+      isEditorOpen: location.pathname === ROUTE_EDITOR && !!this.state.file,
+      classic: location.pathname === '/classic',
+    });
+  };
+
+  private openBatch = () => {
+    if (location.pathname !== '/') history.pushState(null, '', '/');
+    this.setState({ isEditorOpen: false, classic: false });
+  };
+
+  private openClassic = () => {
+    history.pushState(null, '', '/classic');
+    this.setState({ isEditorOpen: false, classic: true });
   };
 
   private openEditor = () => {
@@ -109,22 +133,57 @@ export default class App extends Component<Props, State> {
 
   render(
     {}: Props,
-    { file, isEditorOpen, Compress, awaitingShareTarget }: State,
+    {
+      file,
+      isEditorOpen,
+      Compress,
+      Batch,
+      incoming,
+      classic,
+      awaitingShareTarget,
+    }: State,
   ) {
-    const showSpinner = awaitingShareTarget || (isEditorOpen && !Compress);
+    const showSpinner =
+      awaitingShareTarget || (isEditorOpen ? !Compress : !classic && !Batch);
 
     return (
       <div class={style.app}>
-        <file-drop onfiledrop={this.onFileDrop} class={style.drop}>
+        <file-drop
+          multiple
+          onfiledrop={this.onFileDrop}
+          class={`${style.drop} ${isEditorOpen ? '' : style.scrollable}`}
+        >
+          {Batch && (
+            <div
+              class={style.batchHost}
+              hidden={!!isEditorOpen || classic || awaitingShareTarget}
+            >
+              <Batch
+                incoming={incoming}
+                onInspect={this.onIntroPickFile}
+                onClassic={this.openClassic}
+                showSnack={this.showSnack}
+              />
+            </div>
+          )}
           {showSpinner ? (
             <loading-spinner class={style.appLoader} />
           ) : isEditorOpen ? (
             Compress && (
-              <Compress file={file!} showSnack={this.showSnack} onBack={back} />
+              <Compress
+                file={file!}
+                showSnack={this.showSnack}
+                onBack={this.openBatch}
+              />
             )
-          ) : (
-            <Intro onFile={this.onIntroPickFile} showSnack={this.showSnack} />
-          )}
+          ) : classic ? (
+            <div class={style.classicHost}>
+              <button class={style.returnToBatch} onClick={this.openBatch}>
+                ← Batch workspace
+              </button>
+              <Intro onFile={this.onIntroPickFile} showSnack={this.showSnack} />
+            </div>
+          ) : null}
           <snack-bar ref={linkRef(this, 'snackbar')} />
         </file-drop>
       </div>

@@ -156,3 +156,8 @@
     opacity: 0.5;
   }
 }
+
+.side-actions {
+  display: flex;
+  gap: 0.8rem;
+}
