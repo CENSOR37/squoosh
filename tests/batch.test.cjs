@@ -257,6 +257,8 @@ test('mixed image aspect ratios fit individually, and rotation precedes resize',
       height: 50,
     };
     batch.state.rotation = 90;
+    // Fit must ignore a crop setting restored from the original editor.
+    batch.state.processors.resize.fitMethod = 'contain';
     await batch.run();
     assert.deepEqual(
       captured.map((processors) => [
@@ -269,7 +271,76 @@ test('mixed image aspect ratios fit individually, and rotation precedes resize',
         [50, 25],
       ],
     );
+    assert.ok(captured.every(({ resize }) => resize.fitMethod === 'stretch'));
   } finally {
+    batch.componentWillUnmount();
+  }
+});
+
+for (const fit of ['fill', 'stretch']) {
+  test(`${fit} keeps exact dimensions and selects the appropriate resize behavior`, async () => {
+    const { batch, captured } = makeBatch();
+    try {
+      batch.state.resizeFit = fit;
+      batch.state.processors.resize = {
+        ...batch.state.processors.resize,
+        enabled: true,
+        width: 50,
+        height: 50,
+      };
+      await batch.run();
+      assert.deepEqual(
+        captured.map(({ resize }) => [
+          resize.width,
+          resize.height,
+          resize.fitMethod,
+        ]),
+        Array(3).fill([50, 50, fit === 'fill' ? 'contain' : 'stretch']),
+      );
+    } finally {
+      batch.componentWillUnmount();
+    }
+  });
+}
+
+test('saved fit methods round-trip and legacy aspect settings retain their behavior', () => {
+  const { batch } = makeBatch();
+  const previousStorage = global.localStorage;
+  let saved;
+  global.localStorage = {
+    setItem(_, value) {
+      saved = value;
+    },
+    getItem() {
+      return saved;
+    },
+  };
+  try {
+    batch.state.resizeFit = 'fill';
+    batch.saveSettings();
+    batch.state.resizeFit = 'fit';
+    batch.restoreSettings();
+    assert.equal(batch.state.resizeFit, 'fill');
+    const data = JSON.parse(saved);
+    delete data.resizeFit;
+    for (const [preserveAspect, originalMode, expected] of [
+      [true, 'contain', 'fit'],
+      [false, 'contain', 'fill'],
+      [false, 'stretch', 'stretch'],
+    ]) {
+      saved = JSON.stringify({
+        ...data,
+        preserveAspect,
+        processors: {
+          ...data.processors,
+          resize: { ...data.processors.resize, fitMethod: originalMode },
+        },
+      });
+      batch.restoreSettings();
+      assert.equal(batch.state.resizeFit, expected);
+    }
+  } finally {
+    global.localStorage = previousStorage;
     batch.componentWillUnmount();
   }
 });

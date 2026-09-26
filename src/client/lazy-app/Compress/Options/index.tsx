@@ -227,6 +227,7 @@ export default class Options extends Component<Props, State> {
               <Expander>
                 {processorState.resize.enabled ? (
                   <ResizeOptionsComponent
+                    showFitMethod={!this.props.bulk}
                     isVector={Boolean(source && source.vectorImage)}
                     inputWidth={source ? source.preprocessed.width : 1}
                     inputHeight={source ? source.preprocessed.height : 1}

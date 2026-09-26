@@ -13,7 +13,7 @@ resize, palette reduction and rotation. Processing is sequential to limit peak m
 - Set a naming prefix, suffix and sequence numbers, or edit individual output stems. Duplicate output names are disambiguated automatically.
 - Stop and resume unfinished work; failed images do not block the rest of the queue.
 - Changing encoding or processing settings clears previous results so downloads match the current settings.
-- Resize can fit each image inside the target dimensions while preserving its own aspect ratio. Turn this off to use the original exact-size and fit controls.
+- Resize **Fit method** supports **Fit** (keep the whole image inside the target dimensions), **Fill** (center-crop to fill the exact dimensions), and **Stretch** (use the exact dimensions without preserving aspect ratio). Fit and Fill preserve each image's aspect ratio.
 - Save and restore batch settings on the current device.
 - Use **Edit** on a queued image or **Single image editor** to access the original two-sided comparison, zoom, background, smoothing, rotation and saved side settings. The original editor uses its own settings; returning keeps the batch queue and results.
 
@@ -23,6 +23,18 @@ format (up to 65,535 files and under 4 GB); larger results can be downloaded ind
 After `npm install` and `npm run build`, run `npm run preview` to open the app at
 `http://localhost:5000` (works in PowerShell as well). Run `npm test` for batch queue,
 cancellation, naming, resize and ZIP regression tests.
+
+The resize regression tests run the bundled WebAssembly codec and check that long
+batches do not accumulate unbounded memory. To also verify a local PNG folder with
+128×128 Fit and OxiPNG, run in PowerShell:
+
+```powershell
+$env:SQUOOSH_TEST_ITEMS = 'temp/items'
+npm test
+```
+
+The image-folder test is skipped when this variable is unset; test images are not
+included in the repository.
 
 # Privacy
 

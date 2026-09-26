@@ -57,7 +57,7 @@ interface State {
     suffix: string;
     numbered: boolean;
   };
-  preserveAspect: boolean;
+  resizeFit: 'fit' | 'fill' | 'stretch';
   filter: 'all' | 'done' | 'error';
   samplesLoading: boolean;
 }
@@ -117,7 +117,7 @@ export default class Batch extends Component<Props, State> {
       suffix: '-compressed',
       numbered: false,
     },
-    preserveAspect: true,
+    resizeFit: 'fit',
     filter: 'all',
     samplesLoading: false,
   };
@@ -307,7 +307,7 @@ export default class Batch extends Component<Props, State> {
     this.busy = true;
     const controller = (this.controller = new AbortController());
     const { signal } = controller;
-    const { encoder, processors, rotation, preserveAspect } = this.state;
+    const { encoder, processors, rotation, resizeFit } = this.state;
     const queue = this.state.items.filter((item) => item.status !== 'done');
     this.setState({ running: true, filter: 'all' });
     try {
@@ -334,8 +334,10 @@ export default class Batch extends Component<Props, State> {
               this.worker,
             );
             let resize = { ...processors.resize };
+            // The original resize pipeline calls its centered crop mode "contain".
+            resize.fitMethod = resizeFit === 'fill' ? 'contain' : 'stretch';
             // Fit each image inside the target box without stretching mixed aspect ratios.
-            if (resize.enabled && preserveAspect) {
+            if (resize.enabled && resizeFit === 'fit') {
               const ratio = Math.min(
                 resize.width / source.preprocessed.width,
                 resize.height / source.preprocessed.height,
@@ -441,8 +443,7 @@ export default class Batch extends Component<Props, State> {
       this.state.naming,
     );
   private saveSettings = () => {
-    const { encoder, processors, rotation, naming, preserveAspect } =
-      this.state;
+    const { encoder, processors, rotation, naming, resizeFit } = this.state;
     try {
       localStorage.setItem(
         'squoosh-batch-settings',
@@ -451,7 +452,7 @@ export default class Batch extends Component<Props, State> {
           processors,
           rotation,
           naming,
-          preserveAspect,
+          resizeFit,
         }),
       );
       this.props.showSnack('Batch settings saved on this device.');
@@ -483,7 +484,13 @@ export default class Batch extends Component<Props, State> {
         processors: data.processors,
         rotation: data.rotation,
         naming: data.naming,
-        preserveAspect: Boolean(data.preserveAspect),
+        resizeFit: ['fit', 'fill', 'stretch'].includes(data.resizeFit)
+          ? data.resizeFit
+          : data.preserveAspect
+          ? 'fit'
+          : data.processors.resize.fitMethod === 'contain'
+          ? 'fill'
+          : 'stretch',
       });
       this.props.showSnack('Saved batch settings restored.');
     } catch (_) {
@@ -609,21 +616,28 @@ export default class Batch extends Component<Props, State> {
                   <div class={style.extraSettings}>
                     {processors.resize.enabled && (
                       <div>
-                        <label class={style.checkLabel}>
-                          <input
-                            type="checkbox"
-                            checked={state.preserveAspect}
+                        <label class={style.fieldLabel}>
+                          Fit method:
+                          <select
+                            value={state.resizeFit}
                             onChange={(event) =>
                               this.invalidate({
-                                preserveAspect: event.currentTarget.checked,
+                                resizeFit: event.currentTarget
+                                  .value as State['resizeFit'],
                               })
                             }
-                          />{' '}
-                          Fit each image inside target dimensions
+                          >
+                            <option value="fill">Fill</option>
+                            <option value="fit">Fit</option>
+                            <option value="stretch">Stretch</option>
+                          </select>
                         </label>
                         <p class={style.help}>
-                          Preserves each image’s aspect ratio. Turn off to use
-                          the exact resize and fit options above.
+                          {state.resizeFit === 'fill'
+                            ? 'Fills the target dimensions while preserving aspect ratio. Edges are cropped from the center.'
+                            : state.resizeFit === 'fit'
+                            ? 'Fits the whole image inside the target dimensions while preserving aspect ratio. No cropping.'
+                            : 'Uses the exact target dimensions. Images may be stretched.'}
                         </p>
                       </div>
                     )}

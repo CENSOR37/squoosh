@@ -53,7 +53,32 @@ const resizeMethods: WorkerResizeOptions['method'][] = [
   'lanczos3',
 ];
 
-let resizeWasmReady: Promise<unknown>;
+// The bundled resizer's allocator retains memory across calls. A long batch
+// eventually crosses the signed 32-bit pointer range in its generated bindings.
+// Reinstantiate from the already compiled module to bound that accumulation.
+const maxRetainedResizeMemory = 128 * 1024 * 1024;
+let resizeWasmReady: ReturnType<typeof initResizeWasm> | undefined;
+const resizeInitializer = initResizeWasm as typeof initResizeWasm & {
+  __wbindgen_wasm_module?: WebAssembly.Module;
+};
+
+async function prepareResizeWasm() {
+  if (
+    resizeWasmReady &&
+    (await resizeWasmReady).memory.buffer.byteLength > maxRetainedResizeMemory
+  ) {
+    resizeWasmReady = undefined;
+  }
+  if (!resizeWasmReady) {
+    resizeWasmReady = initResizeWasm(
+      resizeInitializer.__wbindgen_wasm_module,
+    ).catch((error) => {
+      resizeWasmReady = undefined;
+      throw error;
+    });
+  }
+  await resizeWasmReady;
+}
 let hqxWasmReady: Promise<unknown>;
 
 async function hqx(
@@ -93,17 +118,13 @@ export default async function resize(
 ): Promise<ImageData> {
   let input = data;
 
-  if (!resizeWasmReady) {
-    resizeWasmReady = initResizeWasm();
-  }
+  await prepareResizeWasm();
 
   if (optsIsHqxOpts(opts)) {
     input = await hqx(input, opts);
     // Regular resize to make up the difference
     opts = { ...opts, method: 'catrom' };
   }
-
-  await resizeWasmReady;
 
   if (opts.fitMethod === 'contain') {
     const { sx, sy, sw, sh } = getContainOffsets(

@@ -98,6 +98,7 @@ export async function resize(
 }
 
 interface Props {
+  showFitMethod?: boolean;
   isVector: Boolean;
   inputWidth: number;
   inputHeight: number;
@@ -224,7 +225,10 @@ export class Options extends Component<Props, State> {
     this.reportOptions();
   };
 
-  render({ options, isVector }: Props, { maintainAspect }: State) {
+  render(
+    { options, isVector, showFitMethod = true }: Props,
+    { maintainAspect }: State,
+  ) {
     return (
       <form
         ref={linkRef(this, 'form')}
@@ -314,7 +318,7 @@ export class Options extends Component<Props, State> {
           />
         </label>
         <Expander>
-          {maintainAspect ? null : (
+          {maintainAspect || !showFitMethod ? null : (
             <label class={style.optionTextFirst}>
               Fit method:
               <Select
