@@ -15,6 +15,10 @@ declare var self: ServiceWorkerGlobalScope;
 const versionedCache = 'static-' + VERSION;
 const dynamicCache = 'dynamic';
 const expectedCaches = [versionedCache, dynamicCache];
+const rootPath = __BASE_PATH__ + '/';
+const editorPath = __BASE_PATH__ + '/editor';
+const classicPath = __BASE_PATH__ + '/classic';
+const normalizedPath = (path: string) => path.replace(/\/$/, '');
 
 self.addEventListener('install', (event) => {
   event.waitUntil(
@@ -54,20 +58,23 @@ self.addEventListener('fetch', (event) => {
   // Don't care about other-origin URLs
   if (url.origin !== location.origin) return;
 
-  if (url.pathname === '/editor') {
-    event.respondWith(Response.redirect('/'));
+  if (normalizedPath(url.pathname) === normalizedPath(editorPath)) {
+    event.respondWith(Response.redirect(rootPath));
     return;
   }
 
-  if (url.pathname === '/classic' && event.request.method === 'GET') {
+  if (
+    normalizedPath(url.pathname) === normalizedPath(classicPath) &&
+    event.request.method === 'GET'
+  ) {
     event.respondWith(
-      caches.match('/').then((cached) => cached || fetch(event.request)),
+      caches.match(rootPath).then((cached) => cached || fetch(event.request)),
     );
     return;
   }
 
   if (
-    url.pathname === '/' &&
+    normalizedPath(url.pathname) === normalizedPath(rootPath) &&
     url.searchParams.has('share-target') &&
     event.request.method === 'POST'
   ) {

@@ -62,6 +62,7 @@ export function escapeStyleScriptContent(str: string): string {
  */
 export const siteOrigin = (() => {
   if (process.env.DEV_PORT) return `http://localhost:${process.env.DEV_PORT}`;
+  if (process.env.SITE_ORIGIN) return process.env.SITE_ORIGIN.replace(/\/$/, '');
   // https://docs.netlify.com/configure-builds/environment-variables/#build-metadata
   if (process.env.CONTEXT === 'production') return 'https://squoosh.app';
   if (process.env.DEPLOY_PRIME_URL) return process.env.DEPLOY_PRIME_URL;
@@ -70,3 +71,11 @@ export const siteOrigin = (() => {
   );
   return 'https://squoosh.app';
 })();
+
+export const sitePath = (path = '/') => {
+  const basePath = (process.env.SITE_BASE_PATH || '').trim();
+  const normalizedBase =
+    !basePath || basePath === '/' ? '' : '/' + basePath.replace(/^\/+|\/+$/g, '');
+  const normalizedPath = path === '/' ? '/' : '/' + path.replace(/^\/+/, '');
+  return normalizedBase + normalizedPath;
+};

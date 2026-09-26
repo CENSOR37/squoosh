@@ -32,7 +32,10 @@ import featurePlugin from './lib/feature-plugin';
 import initialCssPlugin from './lib/initial-css-plugin';
 import serviceWorkerPlugin from './lib/sw-plugin';
 import dataURLPlugin from './lib/data-url-plugin';
-import entryDataPlugin, { fileNameToURL } from './lib/entry-data-plugin';
+import entryDataPlugin, {
+  fileNameToURL,
+  getBasePath,
+} from './lib/entry-data-plugin';
 import dedent from 'dedent';
 
 function resolveFileUrl({ fileName }) {
@@ -72,6 +75,12 @@ export default async function ({ watch }) {
   await del('.tmp/build');
 
   const isProduction = !watch;
+  const basePath = getBasePath();
+  const replacements = {
+    __BASE_PATH__: JSON.stringify(basePath),
+    __PRERENDER__: false,
+    __PRODUCTION__: isProduction,
+  };
 
   const tsPluginInstance = simpleTS('.', {
     watch,
@@ -127,7 +136,7 @@ export default async function ({ watch }) {
             ...commonPlugins(),
             commonjs(),
             resolve(),
-            replace({ __PRERENDER__: false, __PRODUCTION__: isProduction }),
+            replace(replacements),
             entryDataPlugin(),
             isProduction ? terser({ module: true }) : {},
           ],
@@ -148,7 +157,7 @@ export default async function ({ watch }) {
       emitFiles({ include: '**/*', root: path.join(__dirname, 'src', 'copy') }),
       nodeExternalPlugin(),
       featurePlugin(),
-      replace({ __PRERENDER__: true, __PRODUCTION__: isProduction }),
+      replace({ ...replacements, __PRERENDER__: true }),
       initialCssPlugin(),
       runScript(dir + '/static-build/index.js'),
     ],

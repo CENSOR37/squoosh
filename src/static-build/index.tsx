@@ -12,7 +12,7 @@
  */
 import { h } from 'preact';
 
-import { renderPage, writeFiles } from './utils';
+import { renderPage, sitePath, writeFiles } from './utils';
 import IndexPage from './pages/index';
 import * as iconLargeMaskable from 'img-url:static-build/assets/icon-large-maskable.png';
 import * as iconLarge from 'img-url:static-build/assets/icon-large.png';
@@ -52,12 +52,17 @@ interface Output {
   [outputPath: string]: string;
 }
 
+const indexHTML = renderPage(<IndexPage />);
+
 const toOutput: Output = {
-  'index.html': renderPage(<IndexPage />),
+  'index.html': indexHTML,
+  'classic/index.html': indexHTML,
+  'editor/index.html': indexHTML,
   'manifest.json': JSON.stringify({
     name: 'Squoosh',
     short_name: 'Squoosh',
-    start_url: '/?utm_medium=PWA&utm_source=launcher',
+    start_url: sitePath('/?utm_medium=PWA&utm_source=launcher'),
+    scope: sitePath('/'),
     display: 'standalone',
     orientation: 'any',
     background_color: '#fff',
@@ -81,7 +86,9 @@ const toOutput: Output = {
     categories: ['photo', 'productivity', 'utilities'],
     screenshots,
     share_target: {
-      action: '/?utm_medium=PWA&utm_source=share-target&share-target',
+      action: sitePath(
+        '/?utm_medium=PWA&utm_source=share-target&share-target',
+      ),
       method: 'POST',
       enctype: 'multipart/form-data',
       params: {

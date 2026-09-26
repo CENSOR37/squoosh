@@ -30,6 +30,7 @@ jobs:
           cache: npm
 
       - name: Configure GitHub Pages
+        id: pages
         uses: actions/configure-pages@v5
 
       - name: Install dependencies
@@ -40,6 +41,9 @@ jobs:
 
       - name: Build site
         run: npm run build
+        env:
+          SITE_BASE_PATH: ${{ steps.pages.outputs.base_path }}
+          SITE_ORIGIN: ${{ steps.pages.outputs.origin }}
 
       - name: Disable Jekyll processing
         run: touch build/.nojekyll

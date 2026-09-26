@@ -12,7 +12,12 @@ import 'shared/custom-els/snack-bar';
 import Intro from 'shared/prerendered-app/Intro';
 import 'shared/custom-els/loading-spinner';
 
-const ROUTE_EDITOR = '/editor';
+const ROUTE_ROOT = __BASE_PATH__ + '/';
+const ROUTE_EDITOR = __BASE_PATH__ + '/editor';
+const ROUTE_CLASSIC = __BASE_PATH__ + '/classic';
+
+const isCurrentRoute = (route: string) =>
+  location.pathname.replace(/\/$/, '') === route.replace(/\/$/, '');
 
 const compressPromise = import('client/lazy-app/Compress');
 const batchPromise = import('client/lazy-app/Batch');
@@ -39,7 +44,7 @@ export default class App extends Component<Props, State> {
     file: undefined,
     Compress: undefined,
     incoming: [],
-    classic: location.pathname === '/classic',
+    classic: isCurrentRoute(ROUTE_CLASSIC),
   };
 
   snackbar?: SnackBarElement;
@@ -66,7 +71,7 @@ export default class App extends Component<Props, State> {
       if (!this.state.awaitingShareTarget) return;
       const file = await getSharedImage();
       // Remove the ?share-target from the URL
-      history.replaceState('', '', '/');
+      history.replaceState('', '', ROUTE_ROOT);
       this.openEditor();
       this.setState({ file, awaitingShareTarget: false });
     });
@@ -107,18 +112,18 @@ export default class App extends Component<Props, State> {
 
   private onPopState = () => {
     this.setState({
-      isEditorOpen: location.pathname === ROUTE_EDITOR && !!this.state.file,
-      classic: location.pathname === '/classic',
+      isEditorOpen: isCurrentRoute(ROUTE_EDITOR) && !!this.state.file,
+      classic: isCurrentRoute(ROUTE_CLASSIC),
     });
   };
 
   private openBatch = () => {
-    if (location.pathname !== '/') history.pushState(null, '', '/');
+    if (!isCurrentRoute(ROUTE_ROOT)) history.pushState(null, '', ROUTE_ROOT);
     this.setState({ isEditorOpen: false, classic: false });
   };
 
   private openClassic = () => {
-    history.pushState(null, '', '/classic');
+    history.pushState(null, '', ROUTE_CLASSIC);
     this.setState({ isEditorOpen: false, classic: true });
   };
 
